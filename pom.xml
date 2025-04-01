@@ -1,0 +1,15 @@
+<project>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.example</groupId>
+	<artifactId>ride-sharing-platform</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>ride-sharing-platform</name>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>user-service</module>
+		<module>driver-service</module>
+
+	</modules>
+
+</project>
