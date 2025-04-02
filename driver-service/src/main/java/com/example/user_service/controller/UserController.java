@@ -21,15 +21,7 @@ public class UserController {
         return userService.createUser(userDTO);
     }
 
-    @GetMapping("/{id}")
-    public Driver getUser(@PathVariable String id){
-        return userService.getUser(id);
-    }
 
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable String id){
-        userService.deleteUser(id);
-    }
 
     @PutMapping("/{id}")
     public Driver updateUser(@PathVariable String id, @RequestBody CreateDriverDTO userDTO){

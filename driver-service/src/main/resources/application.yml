@@ -41,7 +41,8 @@ server:
 kafka:
   topic:
     ride-request: ride-request
-    ride-accept: ride-accept
+    ride-accept: ride-
+    location-updates: location-updates
 
 
 

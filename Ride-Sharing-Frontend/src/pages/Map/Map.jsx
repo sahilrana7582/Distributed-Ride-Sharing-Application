@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, CircularProgress, Typography, Alert, Slide } from '@mui/material';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { useSnackbar } from 'notistack';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import carImage from "../../assets/images/car.png";
@@ -39,6 +43,8 @@ const carIcon = new L.Icon({
   iconAnchor: [20, 20],
   popupAnchor: [0, -20],
 });
+
+const SOCKET_URL = 'http://localhost:8084/ws-notifications';
 
 const Map = () => {
   const [loading, setLoading] = useState(true);
@@ -110,8 +116,99 @@ const Map = () => {
     { id: 1, lat: 31.334586, lng:  75.571922, heading: 45 },
   ];
 
+  const { enqueueSnackbar } = useSnackbar();
+  const [notification, setNotification] = useState(null);
+
+  // WebSocket connection setup
+  useEffect(() => {
+    const client = new Client({
+      webSocketFactory: () => new SockJS(SOCKET_URL),
+      debug: (str) => {
+        console.log(str);
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      onStompError: (frame) => {
+        console.error('STOMP error:', frame);
+      },
+    });
+
+    client.onConnect = () => {
+      console.log('Connected to WebSocket');
+      client.subscribe('/topic/rideEvents', (message) => {
+        console.log('Received message:', message.body);
+        try {
+          const response = JSON.parse(message.body);
+          // Change from response.status to response.rideStatus
+          if (response.rideStatus === 'ACCEPTED') {
+            setNotification({
+              type: 'success',
+              message: response.message,
+              timestamp: new Date(),
+            });
+            
+            enqueueSnackbar('🎉 Ride Accepted!', {
+              variant: 'success',
+              anchorOrigin: {
+                vertical: 'top',
+                horizontal: 'center',
+              },
+              TransitionComponent: Slide,
+              autoHideDuration: 5000,
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing message:', error);
+        }
+      });
+    };
+
+    client.onWebSocketError = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    client.onDisconnect = () => {
+      console.log('Disconnected from WebSocket');
+    };
+
+    try {
+      client.activate();
+    } catch (error) {
+      console.error('Failed to connect to WebSocket:', error);
+    }
+
+    return () => {
+      if (client.active) {
+        client.deactivate();
+      }
+    };
+  }, [enqueueSnackbar]);
+
   return (
     <div className="map-page">
+      {/* Notification Alert */}
+      {notification && (
+        <div className="ride-notification">
+          <Alert
+            icon={<CheckCircleIcon fontSize="inherit" />}
+            severity="success"
+            onClose={() => setNotification(null)}
+          >
+            <div className="notification-content">
+              <Typography variant="h6" component="div">
+                Ride Accepted!
+              </Typography>
+              <Typography variant="body2">
+                {notification.message}
+              </Typography>
+              <Typography variant="caption" className="notification-time">
+                {new Date(notification.timestamp).toLocaleTimeString()}
+              </Typography>
+            </div>
+          </Alert>
+        </div>
+      )}
       {loading ? (
         <Box className="map-loading">
           <CircularProgress />

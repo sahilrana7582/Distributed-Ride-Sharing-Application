@@ -9,6 +9,8 @@
 	<modules>
 		<module>user-service</module>
 		<module>driver-service</module>
+		<module>location-service</module>
+		<module>notification-service</module>
 
 	</modules>
 
